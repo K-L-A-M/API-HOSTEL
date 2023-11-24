@@ -13,8 +13,8 @@ class PromotionType(models.TextChoices):
 
 class Promotion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    name = models.CharField(max_length=256, blank=True, null=True)
+    name = models.CharField(max_length=256, blank=True, )
     promotion_type = models.CharField(choices=PromotionType.choices, default=PromotionType.NoPromotion)
-    start_date = models.DateField(null=False)
-    end_date = models.DateField(blank=True)
-    discount_percentage = models.PositiveIntegerField(null=True, blank=True)
+    start_date = models.DateField(blank=True)
+    end_date = models.DateField(blank=True,)
+    discount_percentage = models.PositiveIntegerField(default=0)
