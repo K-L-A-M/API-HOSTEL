@@ -17,6 +17,6 @@ class CheckListSerializer(serializers.ModelSerializer):
             'room',
             'check_in_date',
             'check_out_date',
-            'is_reserved',
+
         ]
         read_only_fields = ['id']
