@@ -18,6 +18,6 @@ class Transaction(models.Model):
     user_name = models.CharField(max_length=150, null=True, blank=True)
     method = models.CharField(choices=TransactionMethod.choices, max_length=20)
     timestamp = models.DateTimeField(auto_now_add=True)
-    amount_paid = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
+    amount_paid = models.DecimalField(max_digits=8, decimal_places=2, null=True)
     discount_percentage = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
-    discount_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=8, decimal_places=2)

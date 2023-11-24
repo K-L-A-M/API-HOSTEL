@@ -1,12 +1,15 @@
 from rest_framework import serializers
+
+from users.models import User
 from .models import Transaction
+import pytz
 
 
 class TransactionSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(format='hex', read_only=True)
-    user = serializers.UUIDField(format='hex', read_only=True)
-    user_name = serializers.CharField(source='user.name', read_only=True)
-    user_cpf = serializers.CharField(source='user.cpf', read_only=True)
+    user = serializers.SerializerMethodField(read_only=True)
+    user_name = serializers.CharField(read_only=True, source='user.username')
+    user_cpf = serializers.CharField(read_only=True, source='user.cpf')
 
     class Meta:
         model = Transaction
@@ -21,66 +24,39 @@ class TransactionSerializer(serializers.ModelSerializer):
             'discount_percentage',
             'discount_amount',
         ]
-        read_only_fields = ['id', 'timestamp', 'discount_percentage', 'discount_amount']
-
-    def calculate_discounts(self, room, check_in_date, check_out_date):
-        discount_percentage = 0
-        discount_amount = 0
-
-        if room.promotions.exists():
-            promotion = room.promotions.first()
-
-            if promotion.promotion_type in ['discount in daily', 'extended stay discount']:
-                discount_percentage = promotion.discount_percentage
-
-            elif promotion.promotion_type == 'discount':
-                discount_amount = promotion.discount_amount
-
-        return discount_percentage, discount_amount
-
-    def calculate_amount_paid(self, data):
-        check_in_date = data.get('check_in_date')
-        check_out_date = data.get('check_out_date')
-        room = data.get('room')
-
-        if check_in_date and check_out_date and room:
-            discount_percentage, discount_amount = self.calculate_discounts(room, check_in_date, check_out_date)
-            price_per_night = room.price_per_night
-            delta_days = (check_out_date - check_in_date).days
-            total_amount = delta_days * price_per_night
-            amount_paid = total_amount - discount_amount
-            amount_paid = max(amount_paid, 0)
-
-            return amount_paid, discount_percentage, discount_amount
-
-        return 0, 0, 0
-
-    def create(self, validated_data):
-        user = validated_data.pop('user')
-        user_id = user.id
-        amount_paid, discount_percentage, discount_amount = self.calculate_amount_paid(validated_data)
-
-        transaction = Transaction.objects.create(user_id=user_id, amount_paid=amount_paid, **validated_data)
-
-        user_name = user.name if user.name else "N/A"
-
-        response_data = {
-            'id': transaction.id,
-            'user': {
-                'id': user_id,
-                'name': user_name,
-                'cpf': self.format_cpf(user.cpf),
-            },
-            'amount_paid': amount_paid,
-            'timestamp': transaction.timestamp,
-            'discount_percentage': discount_percentage,
-            'discount_amount': discount_amount,
-            'method': transaction.method,
+        read_only_fields = ['id', 'timestamp', 'user_name', 'user_cpf',]
+        extra_kwargs = {
+            "discount_percentage": {"required": False},
+            "discount_amount": {"required": False}
         }
 
-        return response_data
+    def get_user(self, obj):
+        if obj.user:
+            return obj.user.id
+        return None
 
-    def format_cpf(self, value):
-        if value and len(value) == 11:
-            return f"{value[:3]}.{value[3:6]}.{value[6:9]}-{value[9:]}"
-        return value
+    def get_timestamp(self, obj):
+        if isinstance(obj, Transaction):
+            timestamp = obj.timestamp
+            if timestamp:
+                tz = pytz.timezone('America/Sao_Paulo')
+                timestamp = timestamp.astimezone(tz)
+                return timestamp.strftime('%d-%m-%YT%H:%M:%S.%fZ')
+        return None
+
+    def create(self, validated_data):
+        user_id = self.context['request'].user.id
+        user = User.objects.get(id=user_id)
+
+        transaction = Transaction.objects.create(
+            user=user,
+            user_name=user.name,
+            user_cpf=user.cpf,
+            method=validated_data['method'],
+            timestamp=validated_data.get('timestamp'),
+            amount_paid=validated_data.get('amount_paid', 0),
+            discount_percentage=validated_data.get('discount_percentage', 0),
+            discount_amount=validated_data.get('discount_amount', 0)
+        )
+
+        return transaction
