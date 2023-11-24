@@ -5,9 +5,14 @@ from babel.numbers import format_currency
 
 
 class RoomFeatureSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(format='hex', read_only=True)
+
     class Meta:
         model = RoomFeature
-        fields = ['name']
+        fields = ['id', 'name']
+        extra_kwargs = {
+            'id': {'read_only': True},
+        }
 
 
 class BedSerializer(serializers.ModelSerializer):

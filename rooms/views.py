@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from users.serializers import UserSerializer
-from .models import Room
-from .serializers import RoomSerializer
+from .models import Room, RoomFeature
+from .serializers import RoomFeatureSerializer, RoomSerializer
 from users.permissions import IsAnyUserPermission, IsManagerOrAdministratorPermission, IsOwnerOrEmployeeOrManagerOrAdministratorPermission, IsEmployeeOrManagerOrAdministratorPermission
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -177,3 +177,46 @@ class BedDetailView(generics.RetrieveAPIView):
             raise Http404("Invalid bed ID")
 
         return get_object_or_404(Bed, id=bed_id)
+
+
+class RoomFeatureListCreateView(generics.ListCreateAPIView):
+    queryset = RoomFeature.objects.all()
+    serializer_class = RoomFeatureSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated(), IsManagerOrAdministratorPermission()]
+        elif self.request.method == 'GET':
+            return [IsAnyUserPermission()]
+        return super().get_permissions()
+
+
+class ManageRoomFeaturesView(APIView):
+    permission_classes = [IsManagerOrAdministratorPermission]
+    lookup_field_room = 'id'
+    lookup_field_feature = 'id'
+
+    def convert_hex_to_uuid(self, value):
+        return uuid.UUID(value)
+
+    def post(self, request, room_id, feature_id):
+        room = get_object_or_404(Room, **{self.lookup_field_room: self.convert_hex_to_uuid(room_id)})
+        feature = get_object_or_404(RoomFeature, **{self.lookup_field_feature: self.convert_hex_to_uuid(feature_id)})
+
+        if feature in room.features.all():
+            return Response({'error': 'Feature already in the room'}, status=status.HTTP_400_BAD_REQUEST)
+
+        room.features.add(feature)
+        serializer = RoomSerializer(room)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, room_id, feature_id):
+        room = get_object_or_404(Room, **{self.lookup_field_room: self.convert_hex_to_uuid(room_id)})
+        feature = room.features.filter(**{self.lookup_field_feature: self.convert_hex_to_uuid(feature_id)}).first()
+
+        if feature is None:
+            return Response({'error': 'Feature not in the room'}, status=status.HTTP_400_BAD_REQUEST)
+
+        room.features.remove(feature)
+        serializer = RoomSerializer(room)
+        return Response(serializer.data, status=status.HTTP_200_OK)
