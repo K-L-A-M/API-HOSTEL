@@ -8,6 +8,5 @@ class CheckList(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    check_in_date = models.DateTimeField(blank=True, null=True)
-    check_out_date = models.DateTimeField(blank=True, null=True)
-    is_reserved = models.BooleanField(default=False)
+    check_in_date = models.DateField(null=False)
+    check_out_date = models.DateField(null=False)
