@@ -51,6 +51,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'corsheaders',
     "rest_framework",
     "drf_spectacular",
     "django_filters",
@@ -66,6 +67,7 @@ MY_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -79,6 +81,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'hostel.urls'
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + MY_APPS
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {
