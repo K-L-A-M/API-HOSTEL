@@ -6,14 +6,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from users.permissions import IsEmployeeOrManagerOrAdministratorPermission, IsOwnerOrEmployeeOrManagerOrAdministratorPermission
-from users.serializers import UserSerializer
+from users.serializers import CustomTokenObtainPairSerializer, UserSerializer
 from .models import User
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 
 class TokenObtainpairView(TokenObtainPairView):
-    ...
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class UserCreateView(generics.CreateAPIView):

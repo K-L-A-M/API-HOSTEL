@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.validators import UniqueValidator
 from rooms.serializers import RoomSerializer
 from users.models import TypeUser
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
@@ -91,3 +92,12 @@ class UserSerializer(serializers.ModelSerializer):
         representation['cpf'] = self.format_cpf(representation.get('cpf', ''))
         representation['contact'] = self.format_contact(representation.get('contact', ''))
         return representation
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        user = self.user
+        user_serializer = UserSerializer(user)  # Use seu serializer existente
+        data['user'] = user_serializer.data
+        return data
