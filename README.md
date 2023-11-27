@@ -1,4 +1,4 @@
-# M5 - BandKamp Generic View
+# KLAM API HOTEL
 
 ## Preparando ambiente para execução dos testes
 
